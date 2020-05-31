@@ -162,6 +162,8 @@ public struct OutputStream: TextOutputStream {
 
             print(text, terminator: "", to: &self)
         }
+
+        self.clear()
     }
 
     // MARK: - Private methods
