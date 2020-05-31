@@ -20,16 +20,35 @@ print("!")
 // The following produces the same result as the above but with a syntax-sugar
 // API.
 stream.write(
-    ("Hello, ",    []                                      ),
-    ("Terminal",   [.foreground(.red), .style(.underlined)]),
-    ("!\n",        []                                      ),
-    ("black\t", [.foreground(.white), .background(.black)]),
-    ("red\t", [.background(.red)]),
-    ("green\t", [.background(.green)]),
-    ("yellow\t", [.background(.yellow)]),
-    ("blue\t", [.background(.blue)]),
-    ("magenta\t", [.background(.magenta)]),
-    ("cyan\t", [.background(.cyan)]),
-    ("white\t", [.background(.white)])
+    ("black   ",    [.foreground(.white), .background(.black)]  ),
+    ("red     ",    [.foreground(.blue), .background(.red)]     ),
+    ("green   ",    [.foreground(.magenta), .background(.green)]),
+    ("yellow  ",    [.foreground(.red), .background(.yellow)]   ),
+    ("blue    ",    [.foreground(.yellow), .background(.blue)]  ),
+    ("magenta ",    [.foreground(.green), .background(.magenta)]),
+    ("cyan    ",    [.foreground(.black), .background(.cyan)]   ),
+    ("white   ",    [.foreground(.cyan), .background(.white)]   ),
+    ("\n",          []                                          )
 )
 // Note with this API, `.clear()` is invoked automatically at the end.
+
+// The above API can also take in a array, it's more useful if you need to
+// generate styled output else where (to make it testable, for example).
+var segments = [(String, [OutputStream.StyleSegment])]()
+for foreground in UInt8(0)..<8 {
+    for background in UInt8(0)..<8 {
+        segments.append(
+            (
+                "\(foreground)\(background)",
+                [
+                    .foreground(OutputStream.Color(ansiValue: foreground)!),
+                    .background(OutputStream.Color(ansiValue: background)!),
+                ]
+            )
+        )
+    }
+
+    segments.append(("\n", []))
+}
+
+stream.write(segments)
