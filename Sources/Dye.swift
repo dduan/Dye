@@ -23,10 +23,18 @@ public struct OutputStream: TextOutputStream {
     private var colorStorage = Colors(foreground: nil, background: nil)
     private var styleStorage = Style(rawValue: 0)
     private var requiresStyleFlushNextTime = false
+#if os(Windows)
+    private var originalConsoleAttributes: WORD
+#endif
 
     // MARK: - Public static functions
 
-    public static func standardError(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
+    public static func standardError(
+        foregroundColor: Color? = nil,
+        backgroundColor: Color? = nil,
+        style: Style = Style(rawValue: 0)
+    ) -> OutputStream
+    {
         let colors = Colors(foreground: foregroundColor, background: backgroundColor)
 #if os(Windows)
         let stderr = GetStdHandle(STD_ERROR_HANDLE)!
@@ -34,7 +42,12 @@ public struct OutputStream: TextOutputStream {
         return OutputStream(file: stderr, color: colors, style: style)
     }
 
-    public static func standardOutput(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
+    public static func standardOutput(
+        foregroundColor: Color? = nil,
+        backgroundColor: Color? = nil,
+        style: Style = Style(rawValue: 0)
+    ) -> OutputStream
+    {
         let colors = Colors(foreground: foregroundColor, background: backgroundColor)
 #if os(Windows)
         let stdout = GetStdHandle(STD_OUTPUT_HANDLE)!
@@ -69,6 +82,11 @@ public struct OutputStream: TextOutputStream {
 
     public mutating func write(_ string: String) {
         if self.requiresStyleFlushNextTime {
+#if os(Windows)
+            if self.styling != .none, let newAttributes = self.color.windowsConsoleAttributesValue {
+                SetConsoleTextAttribute(self.file, newAttributes)
+            }
+#endif
             if self.shouldOutputANSI {
 #if os(Windows)
                 WriteFile(
@@ -78,10 +96,12 @@ public struct OutputStream: TextOutputStream {
                     nil,
                     nil
                 )
+
 #else
                 fputs(self.ansi, self.file)
 #endif
             }
+
             self.requiresStyleFlushNextTime = false
         }
 
@@ -103,6 +123,9 @@ public struct OutputStream: TextOutputStream {
             print("\u{001B}[0m", terminator: "", to: &self)
         }
 
+#if os(Windows)
+        SetConsoleTextAttribute(self.file, self.originalConsoleAttributes)
+#endif
         self.colorStorage = Colors(foreground: nil, background: nil)
         self.style = Style(rawValue: 0)
     }
@@ -144,6 +167,9 @@ public struct OutputStream: TextOutputStream {
     // MARK: - Private methods
 
     private init(file: NativeFileHandle, color: Colors, style: Style) {
+        var consoleInfo = CONSOLE_SCREEN_BUFFER_INFO()
+        GetConsoleScreenBufferInfo(file, &consoleInfo)
+        self.originalConsoleAttributes = consoleInfo.wAttributes
         self.file = file
         self.requiresStyleFlushNextTime = color.foreground != nil || color.background != nil || style != []
         self.color = color
@@ -247,6 +273,60 @@ public struct OutputStream: TextOutputStream {
     public struct Colors {
         public var foreground: Color?
         public var background: Color?
+
+#if os(Windows)
+        var windowsConsoleAttributesValue: WORD? {
+            if self.foreground == nil && self.background == nil {
+                return nil
+            }
+
+            var attributes: Int32 = 0
+
+            switch self.foreground {
+            case .black:
+                break
+            case .red:
+                attributes |= FOREGROUND_RED
+            case .green:
+                attributes |= FOREGROUND_GREEN
+            case .yellow:
+                attributes |= FOREGROUND_GREEN | FOREGROUND_RED
+            case .blue:
+                attributes |= FOREGROUND_BLUE
+            case .magenta:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_RED
+            case .cyan:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_GREEN
+            case .white:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+            case nil, .ansi:
+                break
+            }
+
+            switch self.background {
+            case .black:
+                break
+            case .red:
+                attributes |= BACKGROUND_RED
+            case .green:
+                attributes |= BACKGROUND_GREEN
+            case .yellow:
+                attributes |= BACKGROUND_GREEN | BACKGROUND_RED
+            case .blue:
+                attributes |= BACKGROUND_BLUE
+            case .magenta:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_RED
+            case .cyan:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_GREEN
+            case .white:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED
+            case nil, .ansi:
+                break
+            }
+
+            return WORD(attributes)
+        }
+#endif
     }
 
     public struct Style: OptionSet {
@@ -271,6 +351,4 @@ public struct OutputStream: TextOutputStream {
         case background(Color)
         case style(Style)
     }
-
 }
-
