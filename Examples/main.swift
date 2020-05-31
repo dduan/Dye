@@ -14,7 +14,7 @@ print("Terminal", terminator: "", to: &stream)
 // Remember to call this so that your terminal resets to the state it began with. This is important in certain
 // platforms.
 stream.clear()
-print("!")
+print("!", terminator: "\n\n")
 
 // You can pair text segments with their desired style with a batch-writing API:
 // Note with this API, `.clear()` is invoked automatically at the end.
@@ -27,7 +27,7 @@ stream.write(
     ("magenta ",    [.foreground(OutputStream.Color.magenta.intensified), .background(.magenta)]),
     ("cyan    ",    [.foreground(OutputStream.Color.cyan   .intensified), .background(.cyan   )]),
     ("white   ",    [.foreground(OutputStream.Color.white  .intensified), .background(.white  )]),
-    ("\n",          [                                                                          ])
+    ("\n\n",        [                                                                          ])
 )
 
 // The above API can also take in a array, it's more useful if you need to
