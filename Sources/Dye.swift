@@ -169,9 +169,11 @@ public struct OutputStream: TextOutputStream {
     // MARK: - Private methods
 
     private init(file: NativeFileHandle, color: Colors, style: Style) {
+#if os(Windows)
         var consoleInfo = CONSOLE_SCREEN_BUFFER_INFO()
         GetConsoleScreenBufferInfo(file, &consoleInfo)
         self.originalConsoleAttributes = consoleInfo.wAttributes
+#endif
         self.file = file
         self.requiresStyleFlushNextTime = color.foreground != nil || color.background != nil || style != []
         self.color = color
