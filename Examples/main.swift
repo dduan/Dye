@@ -20,5 +20,14 @@ print("!")
 stream.write(
     ("Hello, ",    []                                      ),
     ("Terminal",   [.foreground(.red), .style(.underlined)]),
-    ("!\n",        []                                      )
+    ("!\n",        []                                      ),
+    ("black\t", [.background(.black)]),
+    ("red\t", [.background(.red)]),
+    ("green\t", [.background(.green)]),
+    ("yellow\t", [.background(.yellow)]),
+    ("blue\t", [.background(.blue)]),
+    ("magenta\t", [.background(.magenta)]),
+    ("cyan\t", [.background(.cyan)]),
+    ("white\t", [.background(.white)])
 )
+stream.clear()
