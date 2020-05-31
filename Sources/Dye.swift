@@ -1,5 +1,5 @@
 #if os(macOS)
-import Darwin.C.stdio
+import Darwin
 #elseif os(Linux)
 import Glibc
 #elseif os(Windows)
@@ -24,8 +24,20 @@ public struct OutputStream: TextOutputStream {
     private var styleStorage = Style(rawValue: 0)
     private var requiresStyleFlushNextTime = false
 #if os(Windows)
-    private var originalConsoleAttributes: WORD
+    private let originalConsoleAttributes: WORD
 #endif
+
+    private let isNoColorVariableSet: Bool = {
+#if os(Windows)
+        var ptr = UnsafeMutablePointer<CChar>(bitPattern: 0)
+        _dupenv_s(&ptr, nil, "NO_COLOR")
+        let noColor = ptr != nil
+        free(ptr)
+        return noColor
+#else
+        return getenv("NO_COLOR") != nil
+#endif
+    }()
 
     // MARK: - Public static functions
 
@@ -83,9 +95,11 @@ public struct OutputStream: TextOutputStream {
     public mutating func write(_ string: String) {
         if self.requiresStyleFlushNextTime {
 #if os(Windows)
-            if self.styling != .none, let newAttributes = self.color.windowsConsoleAttributesValue {
-                SetConsoleTextAttribute(self.file, newAttributes)
-            }
+        if self.styling != .none && !self.isNoColorVariableSet,
+            let newAttributes = self.color.windowsConsoleAttributesValue
+        {
+            SetConsoleTextAttribute(self.file, newAttributes)
+        }
 #endif
             if self.shouldOutputANSI {
 #if os(Windows)
@@ -194,8 +208,7 @@ public struct OutputStream: TextOutputStream {
             let fileIsTTY = 1 == isatty(fileno(self.file))
             let platformIsFriendly = true
 #endif
-
-            return fileIsTTY && platformIsFriendly
+            return fileIsTTY && platformIsFriendly && !self.isNoColorVariableSet
         }
     }
 
@@ -218,7 +231,16 @@ public struct OutputStream: TextOutputStream {
             codeStrings.append("\(color)")
         }
 
-        let lookups: [(Style, Int)] = [(.bold, 1), (.dim, 2), (.italic, 3), (.underlined, 4), (.blink, 5), (.inverse, 7), (.hidden, 8), (.strikethrough, 9)]
+        let lookups: [(Style, Int)] = [
+            (.bold, 1),
+            (.dim, 2),
+            (.italic, 3),
+            (.underlined, 4),
+            (.blink, 5),
+            (.inverse, 7),
+            (.hidden, 8),
+            (.strikethrough, 9)
+        ]
         for (key, value) in lookups where style.contains(key) {
             codeStrings.append(String(value))
         }
