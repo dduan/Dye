@@ -1,4 +1,16 @@
+#if os(macOS)
 import Darwin.C.stdio
+#elseif os(Linux)
+import Glibc
+#elseif os(Windows)
+import WinSDK
+#endif
+
+#if os(Windows)
+typealias NativeFileHandle = HANDLE
+#else
+typealias NativeFileHandle = UnsafeMutablePointer<FILE>
+#endif
 
 public struct OutputStream: TextOutputStream {
     public enum Styling: Equatable {
@@ -74,8 +86,22 @@ public struct OutputStream: TextOutputStream {
     private var requiresStyleFlushNextTime = false
 
     private var shouldOutputANSI: Bool {
-        let fileIsTTY = 1 == isatty(fileno(self.file))
-        return self.styling != .none && fileIsTTY || self.styling == .ansi
+        switch self.styling {
+        case .none:
+            return false
+        case .ansi:
+            return true
+        case .auto:
+#if os(Windows)
+            let fileIsTTY = FILE_TYPE_CHAR == GetFileType(self.file)
+            let platformIsFriendly = false
+#else
+            let fileIsTTY = 1 == isatty(fileno(self.file))
+            let platformIsFriendly = true
+#endif
+
+            return fileIsTTY && platformIsFriendly
+        }
     }
 
     public var styling: Styling = .auto
@@ -102,9 +128,9 @@ public struct OutputStream: TextOutputStream {
         }
     }
 
-    private var file: UnsafeMutablePointer<FILE>
+    private var file: NativeFileHandle
 
-    init(file: UnsafeMutablePointer<FILE>, color: Colors, style: Style) {
+    init(file: NativeFileHandle, color: Colors, style: Style) {
         self.file = file
         self.requiresStyleFlushNextTime = color.foreground != nil || color.background != nil || style != []
         self.color = color
@@ -113,23 +139,49 @@ public struct OutputStream: TextOutputStream {
 
     public static func standardError(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
         let colors = Colors(foreground: foregroundColor, background: backgroundColor)
+#if os(Windows)
+        let stderr = GetStdHandle(STD_ERROR_HANDLE)!
+#endif
         return OutputStream(file: stderr, color: colors, style: style)
     }
 
     public static func standardOutput(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
         let colors = Colors(foreground: foregroundColor, background: backgroundColor)
+#if os(Windows)
+        let stdout = GetStdHandle(STD_OUTPUT_HANDLE)!
+#endif
         return OutputStream(file: stdout, color: colors, style: style)
     }
 
     public mutating func write(_ string: String) {
         if self.requiresStyleFlushNextTime {
             if self.shouldOutputANSI {
+#if os(Windows)
+                WriteFile(
+                    self.file,
+                    self.ansi,
+                    DWORD(self.ansi.utf8.count),
+                    nil,
+                    nil
+                )
+#else
                 fputs(self.ansi, self.file)
+#endif
             }
             self.requiresStyleFlushNextTime = false
         }
 
+#if os(Windows)
+        WriteFile(
+            self.file,
+            string,
+            DWORD(string.utf8.count),
+            nil,
+            nil
+        )
+#else
         fputs(string, self.file)
+#endif
     }
 
     var ansi: String {
@@ -162,7 +214,10 @@ public struct OutputStream: TextOutputStream {
     }
 
     public mutating func clear() {
-        print("\u{001B}[0m", terminator: "", to: &self)
+        if self.shouldOutputANSI {
+            print("\u{001B}[0m", terminator: "", to: &self)
+        }
+
         self.colorStorage = Colors(foreground: nil, background: nil)
         self.style = Style(rawValue: 0)
     }
