@@ -13,6 +13,191 @@ typealias NativeFileHandle = UnsafeMutablePointer<FILE>
 #endif
 
 public struct OutputStream: TextOutputStream {
+    // MARK: - Public stored properties
+
+    public var styling: Styling = .auto
+
+    // MARK: - Private stored properties
+
+    private var file: NativeFileHandle
+    private var colorStorage = Colors(foreground: nil, background: nil)
+    private var styleStorage = Style(rawValue: 0)
+    private var requiresStyleFlushNextTime = false
+
+    // MARK: - Public static functions
+
+    public static func standardError(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
+        let colors = Colors(foreground: foregroundColor, background: backgroundColor)
+#if os(Windows)
+        let stderr = GetStdHandle(STD_ERROR_HANDLE)!
+#endif
+        return OutputStream(file: stderr, color: colors, style: style)
+    }
+
+    public static func standardOutput(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
+        let colors = Colors(foreground: foregroundColor, background: backgroundColor)
+#if os(Windows)
+        let stdout = GetStdHandle(STD_OUTPUT_HANDLE)!
+#endif
+        return OutputStream(file: stdout, color: colors, style: style)
+    }
+
+    // MARK: - Public computed properties
+    public var style: Style {
+        get {
+            self.styleStorage
+        }
+
+        set {
+            self.requiresStyleFlushNextTime = true
+            self.styleStorage = newValue
+        }
+    }
+
+    public var color: Colors {
+        get {
+            self.colorStorage
+        }
+
+        set {
+            self.requiresStyleFlushNextTime = true
+            self.colorStorage = newValue
+        }
+    }
+
+    // MARK: - Public computed methods
+
+    public mutating func write(_ string: String) {
+        if self.requiresStyleFlushNextTime {
+            if self.shouldOutputANSI {
+#if os(Windows)
+                WriteFile(
+                    self.file,
+                    self.ansi,
+                    DWORD(self.ansi.utf8.count),
+                    nil,
+                    nil
+                )
+#else
+                fputs(self.ansi, self.file)
+#endif
+            }
+            self.requiresStyleFlushNextTime = false
+        }
+
+#if os(Windows)
+        WriteFile(
+            self.file,
+            string,
+            DWORD(string.utf8.count),
+            nil,
+            nil
+        )
+#else
+        fputs(string, self.file)
+#endif
+    }
+
+    public mutating func clear() {
+        if self.shouldOutputANSI {
+            print("\u{001B}[0m", terminator: "", to: &self)
+        }
+
+        self.colorStorage = Colors(foreground: nil, background: nil)
+        self.style = Style(rawValue: 0)
+    }
+
+    public mutating func write(_ segments: (String, [StyleSegment])...) {
+        self.write(segments)
+    }
+
+    public mutating func write(_ segments: [(String, [StyleSegment])]) {
+        for segment in segments {
+            let (text, options) = segment
+            var foreground: Color?
+            var background: Color?
+            var styleOption: Style = []
+
+            for option in options {
+                switch option {
+                case .foreground(let color):
+                    foreground = color
+                case .background(let color):
+                    background = color
+                case .style(let style):
+                    styleOption = style
+                }
+            }
+
+            if styleOption.isEmpty {
+                self.clear()
+            }
+
+            self.color.foreground = foreground
+            self.color.background = background
+            self.style = styleOption
+
+            print(text, terminator: "", to: &self)
+        }
+    }
+
+    // MARK: - Private methods
+
+    private init(file: NativeFileHandle, color: Colors, style: Style) {
+        self.file = file
+        self.requiresStyleFlushNextTime = color.foreground != nil || color.background != nil || style != []
+        self.color = color
+        self.style = style
+    }
+
+    private var shouldOutputANSI: Bool {
+        switch self.styling {
+        case .none:
+            return false
+        case .ansi:
+            return true
+        case .auto:
+#if os(Windows)
+            let fileIsTTY = FILE_TYPE_CHAR == GetFileType(self.file)
+            let platformIsFriendly = false
+#else
+            let fileIsTTY = 1 == isatty(fileno(self.file))
+            let platformIsFriendly = true
+#endif
+
+            return fileIsTTY && platformIsFriendly
+        }
+    }
+
+    private var ansi: String {
+        if self.color.foreground == nil && self.color.background == nil && self.style == [] {
+            return "\u{001B}[0m"
+        }
+
+        var result = "\u{001B}["
+        var codeStrings: [String] = []
+        if let color = self.color.foreground?.ansiValue {
+            codeStrings.append("38")
+            codeStrings.append("5")
+            codeStrings.append("\(color)")
+        }
+
+        if let color = self.color.background?.ansiValue {
+            codeStrings.append("48")
+            codeStrings.append("5")
+            codeStrings.append("\(color)")
+        }
+
+        let lookups: [(Style, Int)] = [(.bold, 1), (.dim, 2), (.italic, 3), (.underlined, 4), (.blink, 5), (.inverse, 7), (.hidden, 8), (.strikethrough, 9)]
+        for (key, value) in lookups where style.contains(key) {
+            codeStrings.append(String(value))
+        }
+
+        result += codeStrings.joined(separator: ";")
+        result += "m"
+        return result
+    }
+
     public enum Styling: Equatable {
         case auto
         case ansi
@@ -81,185 +266,11 @@ public struct OutputStream: TextOutputStream {
         }
     }
 
-    private var colorStorage = Colors(foreground: nil, background: nil)
-    private var styleStorage = Style(rawValue: 0)
-    private var requiresStyleFlushNextTime = false
-
-    private var shouldOutputANSI: Bool {
-        switch self.styling {
-        case .none:
-            return false
-        case .ansi:
-            return true
-        case .auto:
-#if os(Windows)
-            let fileIsTTY = FILE_TYPE_CHAR == GetFileType(self.file)
-            let platformIsFriendly = false
-#else
-            let fileIsTTY = 1 == isatty(fileno(self.file))
-            let platformIsFriendly = true
-#endif
-
-            return fileIsTTY && platformIsFriendly
-        }
-    }
-
-    public var styling: Styling = .auto
-
-    public var style: Style {
-        get {
-            self.styleStorage
-        }
-
-        set {
-            self.requiresStyleFlushNextTime = true
-            self.styleStorage = newValue
-        }
-    }
-
-    public var color: Colors {
-        get {
-            self.colorStorage
-        }
-
-        set {
-            self.requiresStyleFlushNextTime = true
-            self.colorStorage = newValue
-        }
-    }
-
-    private var file: NativeFileHandle
-
-    init(file: NativeFileHandle, color: Colors, style: Style) {
-        self.file = file
-        self.requiresStyleFlushNextTime = color.foreground != nil || color.background != nil || style != []
-        self.color = color
-        self.style = style
-    }
-
-    public static func standardError(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
-        let colors = Colors(foreground: foregroundColor, background: backgroundColor)
-#if os(Windows)
-        let stderr = GetStdHandle(STD_ERROR_HANDLE)!
-#endif
-        return OutputStream(file: stderr, color: colors, style: style)
-    }
-
-    public static func standardOutput(foregroundColor: Color? = nil, backgroundColor: Color? = nil, style: Style = Style(rawValue: 0)) -> OutputStream {
-        let colors = Colors(foreground: foregroundColor, background: backgroundColor)
-#if os(Windows)
-        let stdout = GetStdHandle(STD_OUTPUT_HANDLE)!
-#endif
-        return OutputStream(file: stdout, color: colors, style: style)
-    }
-
-    public mutating func write(_ string: String) {
-        if self.requiresStyleFlushNextTime {
-            if self.shouldOutputANSI {
-#if os(Windows)
-                WriteFile(
-                    self.file,
-                    self.ansi,
-                    DWORD(self.ansi.utf8.count),
-                    nil,
-                    nil
-                )
-#else
-                fputs(self.ansi, self.file)
-#endif
-            }
-            self.requiresStyleFlushNextTime = false
-        }
-
-#if os(Windows)
-        WriteFile(
-            self.file,
-            string,
-            DWORD(string.utf8.count),
-            nil,
-            nil
-        )
-#else
-        fputs(string, self.file)
-#endif
-    }
-
-    var ansi: String {
-        if self.color.foreground == nil && self.color.background == nil && self.style == [] {
-            return "\u{001B}[0m"
-        }
-
-        var result = "\u{001B}["
-        var codeStrings: [String] = []
-        if let color = self.color.foreground?.ansiValue {
-            codeStrings.append("38")
-            codeStrings.append("5")
-            codeStrings.append("\(color)")
-        }
-
-        if let color = self.color.background?.ansiValue {
-            codeStrings.append("48")
-            codeStrings.append("5")
-            codeStrings.append("\(color)")
-        }
-
-        let lookups: [(Style, Int)] = [(.bold, 1), (.dim, 2), (.italic, 3), (.underlined, 4), (.blink, 5), (.inverse, 7), (.hidden, 8), (.strikethrough, 9)]
-        for (key, value) in lookups where style.contains(key) {
-            codeStrings.append(String(value))
-        }
-
-        result += codeStrings.joined(separator: ";")
-        result += "m"
-        return result
-    }
-
-    public mutating func clear() {
-        if self.shouldOutputANSI {
-            print("\u{001B}[0m", terminator: "", to: &self)
-        }
-
-        self.colorStorage = Colors(foreground: nil, background: nil)
-        self.style = Style(rawValue: 0)
-    }
-
     public enum StyleSegment {
         case foreground(Color)
         case background(Color)
         case style(Style)
     }
 
-    public mutating func write(_ segments: (String, [StyleSegment])...) {
-        self.write(segments)
-    }
-
-    public mutating func write(_ segments: [(String, [StyleSegment])]) {
-        for segment in segments {
-            let (text, options) = segment
-            var foreground: Color?
-            var background: Color?
-            var styleOption: Style = []
-
-            for option in options {
-                switch option {
-                case .foreground(let color):
-                    foreground = color
-                case .background(let color):
-                    background = color
-                case .style(let style):
-                    styleOption = style
-                }
-            }
-
-            if styleOption.isEmpty {
-                self.clear()
-            }
-
-            self.color.foreground = foreground
-            self.color.background = background
-            self.style = styleOption
-
-            print(text, terminator: "", to: &self)
-        }
-    }
 }
 
