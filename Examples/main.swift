@@ -11,6 +11,8 @@ print("Hello, ", terminator: "")
 stream.color.foreground = .red
 stream.style = .underlined
 print("Terminal", terminator: "", to: &stream)
+// Remember to call this so that your terminal resets to the state it began with. This is important in certain
+// platforms.
 stream.clear()
 print("!")
 
@@ -21,7 +23,7 @@ stream.write(
     ("Hello, ",    []                                      ),
     ("Terminal",   [.foreground(.red), .style(.underlined)]),
     ("!\n",        []                                      ),
-    ("black\t", [.background(.black)]),
+    ("black\t", [.foreground(.white), .background(.black)]),
     ("red\t", [.background(.red)]),
     ("green\t", [.background(.green)]),
     ("yellow\t", [.background(.yellow)]),
@@ -30,4 +32,4 @@ stream.write(
     ("cyan\t", [.background(.cyan)]),
     ("white\t", [.background(.white)])
 )
-stream.clear()
+// Note with this API, `.clear()` is invoked automatically at the end.
