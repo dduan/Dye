@@ -26,9 +26,10 @@ stream.write(
     ("blue    ",    [.foreground(OutputStream.Color.blue   .intensified), .background(.blue   )]),
     ("magenta ",    [.foreground(OutputStream.Color.magenta.intensified), .background(.magenta)]),
     ("cyan    ",    [.foreground(OutputStream.Color.cyan   .intensified), .background(.cyan   )]),
-    ("white   ",    [.foreground(OutputStream.Color.white  .intensified), .background(.white  )]),
-    ("\n\n",        [                                                                          ])
+    ("white   ",    [.foreground(OutputStream.Color.white  .intensified), .background(.white  )])
 )
+
+print("", terminator: "\n\n")
 
 // The above API can also take in a array, it's more useful if you need to
 // generate styled output else where (to make it testable, for example).
