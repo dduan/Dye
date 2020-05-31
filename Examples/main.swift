@@ -16,30 +16,28 @@ print("Terminal", terminator: "", to: &stream)
 stream.clear()
 print("!")
 
-
-// The following produces the same result as the above but with a syntax-sugar
-// API.
-stream.write(
-    ("black   ",    [.foreground(.white), .background(.black)]  ),
-    ("red     ",    [.foreground(.blue), .background(.red)]     ),
-    ("green   ",    [.foreground(.magenta), .background(.green)]),
-    ("yellow  ",    [.foreground(.red), .background(.yellow)]   ),
-    ("blue    ",    [.foreground(.yellow), .background(.blue)]  ),
-    ("magenta ",    [.foreground(.green), .background(.magenta)]),
-    ("cyan    ",    [.foreground(.black), .background(.cyan)]   ),
-    ("white   ",    [.foreground(.cyan), .background(.white)]   ),
-    ("\n",          []                                          )
-)
+// You can pair text segments with their desired style with a batch-writing API:
 // Note with this API, `.clear()` is invoked automatically at the end.
+stream.write(
+    ("black   ",    [.foreground(OutputStream.Color.black  .intensified), .background(.black  )]),
+    ("red     ",    [.foreground(OutputStream.Color.red    .intensified), .background(.red    )]),
+    ("green   ",    [.foreground(OutputStream.Color.green  .intensified), .background(.green  )]),
+    ("yellow  ",    [.foreground(OutputStream.Color.yellow .intensified), .background(.yellow )]),
+    ("blue    ",    [.foreground(OutputStream.Color.blue   .intensified), .background(.blue   )]),
+    ("magenta ",    [.foreground(OutputStream.Color.magenta.intensified), .background(.magenta)]),
+    ("cyan    ",    [.foreground(OutputStream.Color.cyan   .intensified), .background(.cyan   )]),
+    ("white   ",    [.foreground(OutputStream.Color.white  .intensified), .background(.white  )]),
+    ("\n",          [                                                                          ])
+)
 
 // The above API can also take in a array, it's more useful if you need to
 // generate styled output else where (to make it testable, for example).
 var segments = [(String, [OutputStream.StyleSegment])]()
-for foreground in UInt8(0)..<8 {
+for foreground in UInt8(8)..<16 {
     for background in UInt8(0)..<8 {
         segments.append(
             (
-                "\(foreground)\(background)",
+                "\(String(foreground, radix: 16))\(String(background, radix: 16))",
                 [
                     .foreground(OutputStream.Color(ansiValue: foreground)!),
                     .background(OutputStream.Color(ansiValue: background)!),

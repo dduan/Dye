@@ -243,6 +243,14 @@ public struct OutputStream: TextOutputStream {
         case magenta
         case cyan
         case white
+        case intenseBlack
+        case intenseRed
+        case intenseGreen
+        case intenseYellow
+        case intenseBlue
+        case intenseMagenta
+        case intenseCyan
+        case intenseWhite
         case ansi(UInt8)
 
         public init?(ansiValue: UInt8) {
@@ -255,6 +263,14 @@ public struct OutputStream: TextOutputStream {
             case 5: self = .magenta
             case 6: self = .cyan
             case 7: self = .white
+            case 8: self =  .intenseBlack
+            case 9: self =  .intenseRed
+            case 10: self = .intenseGreen
+            case 11: self = .intenseYellow
+            case 12: self = .intenseBlue
+            case 13: self = .intenseMagenta
+            case 14: self = .intenseCyan
+            case 15: self = .intenseWhite
             default: self = .ansi(ansiValue)
             }
         }
@@ -269,7 +285,43 @@ public struct OutputStream: TextOutputStream {
             case .magenta: return 5
             case .cyan: return 6
             case .white: return 7
+            case .intenseBlack: return 8
+            case .intenseRed: return 9
+            case .intenseGreen: return 10
+            case .intenseYellow: return 11
+            case .intenseBlue: return 12
+            case .intenseMagenta: return 13
+            case .intenseCyan: return 14
+            case .intenseWhite: return 15
             case .ansi(let number): return number
+            }
+        }
+
+        public var intensified: Color {
+            switch self {
+            case .black: return .intenseBlack
+            case .red: return .intenseRed
+            case .green: return .intenseGreen
+            case .yellow: return .intenseYellow
+            case .blue: return .intenseBlue
+            case .magenta: return .intenseMagenta
+            case .cyan: return .intenseCyan
+            case .white: return .intenseWhite
+            default: return self
+            }
+        }
+
+        public var softened: Color {
+            switch self {
+            case .intenseBlack: return .black
+            case .intenseRed: return .red
+            case .intenseGreen: return .green
+            case .intenseYellow: return .yellow
+            case .intenseBlue: return .blue
+            case .intenseMagenta: return .magenta
+            case .intenseCyan: return .cyan
+            case .intenseWhite: return .white
+            default: return self
             }
         }
     }
@@ -303,6 +355,22 @@ public struct OutputStream: TextOutputStream {
                 attributes |= FOREGROUND_BLUE | FOREGROUND_GREEN
             case .white:
                 attributes |= FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+            case .intenseBlack:
+                attributes |= FOREGROUND_INTENSITY
+            case .intenseRed:
+                attributes |= FOREGROUND_RED | FOREGROUND_INTENSITY
+            case .intenseGreen:
+                attributes |= FOREGROUND_GREEN | FOREGROUND_INTENSITY
+            case .intenseYellow:
+                attributes |= FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
+            case .intenseBlue:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_INTENSITY
+            case .intenseMagenta:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY
+            case .intenseCyan:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY
+            case .intenseWhite:
+                attributes |= FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
             case nil, .ansi:
                 break
             }
@@ -324,6 +392,22 @@ public struct OutputStream: TextOutputStream {
                 attributes |= BACKGROUND_BLUE | BACKGROUND_GREEN
             case .white:
                 attributes |= BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED
+            case .intenseBlack:
+                attributes |= BACKGROUND_INTENSITY
+            case .intenseRed:
+                attributes |= BACKGROUND_RED | BACKGROUND_INTENSITY
+            case .intenseGreen:
+                attributes |= BACKGROUND_GREEN | BACKGROUND_INTENSITY
+            case .intenseYellow:
+                attributes |= BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY
+            case .intenseBlue:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_INTENSITY
+            case .intenseMagenta:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_RED | BACKGROUND_INTENSITY
+            case .intenseCyan:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY
+            case .intenseWhite:
+                attributes |= BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY
             case nil, .ansi:
                 break
             }
