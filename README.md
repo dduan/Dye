@@ -33,6 +33,8 @@ This is what the example CLI app looks like in Command Prompt on Windows:
 
 Read the docstring in the source code for detailed API documentation.
 
+Dye follows the [NO_COLOR convention](https://no-color.org).
+
 ## License
 
 MIT. See LICENSE.md
