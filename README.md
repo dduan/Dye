@@ -38,3 +38,7 @@ Dye follows the [NO_COLOR convention](https://no-color.org).
 ## License
 
 MIT. See LICENSE.md
+
+## Alternative
+
+If you don't need Windows Support, I recommend you check out [Chalk](https://github.com/mxcl/Chalk).
