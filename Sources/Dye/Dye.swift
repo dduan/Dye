@@ -240,6 +240,9 @@ public struct OutputStream: TextOutputStream {
     /// detect the output is not a terminal and therefore avoid producing the escape sequences.
     ///
     /// All of these methods can be controlled by this option.
+    ///
+    /// In addition, Dye respects the `NO_COLOR` [convention](no-color.org). If this environment variable
+    /// exists, styling is disabled.
     public enum StylingMethod: Equatable {
         /// Disable styling when the output device is not an terminal (e.g, Unix pipe). Otherwise use the
         /// default methods to style terminal output.
