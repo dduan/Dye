@@ -27,6 +27,10 @@ The file [Examples/main.swift](Examples/main.swift) is a sample application that
 demonstrates most of Dye's APIs. To get a taste of how Dye works, try it out
 with `swift run example`, and take a look at its source code.
 
+This is what the example CLI app looks like in Command Prompt on Windows:
+
+![Dye example app running in Window Command Prompt](Examples/windows-example-screenshot.jpg)
+
 Read the docstring in the source code for detailed API documentation.
 
 ## License
