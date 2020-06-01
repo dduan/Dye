@@ -18,7 +18,7 @@ set(CMAKE_Swift_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/swift)
 add_subdirectory(cmake/modules)
 
 add_library(Dye
-  Sources/Dye.swift)
+  Sources/Dye/Dye.swift)
 
 # NOTE: workaround for CMake not setting up include flags yet
 set_target_properties(Dye PROPERTIES
