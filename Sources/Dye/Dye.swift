@@ -58,13 +58,13 @@ public struct OutputStream: TextOutputStream {
 
     // MARK: - Public static functions
 
-    /// Create a stream that writes to stderr.
+    /// Create a stream that writes to `stderr`.
     ///
     /// - Parameters:
     ///   - foregroundColor: the color for the upcoming text output.
     ///   - backgroundColor: the background color for the upcoming text output.
     ///   - style:           other styles you want to apply to text output. This has no effect for for some
-    ///                      older termial simulators on Windows, such as CMD.EXE
+    ///                      older terminal simulators on Windows, such as CMD.EXE
     ///
     /// - Returns: A stream for stderr.
     public static func standardError(
@@ -80,13 +80,13 @@ public struct OutputStream: TextOutputStream {
         return OutputStream(file: stderr, color: colors, style: style)
     }
 
-    /// Create a stream that writes to stdout.
+    /// Create a stream that writes to `stdout`.
     ///
     /// - Parameters:
     ///   - foregroundColor: the color for the upcoming text output.
     ///   - backgroundColor: the background color for the upcoming text output.
     ///   - style:           other styles you want to apply to text output. This has no effect for for some
-    ///                      older termial simulators on Windows, such as CMD.EXE
+    ///                      older terminal simulators on Windows, such as CMD.EXE
     ///
     /// - Returns: A stream for stdout.
     public static func standardOutput(
@@ -190,14 +190,14 @@ public struct OutputStream: TextOutputStream {
         self.style = Style(rawValue: 0)
     }
 
-    /// Output segements of text paired with desired colors and styles for each.
+    /// Output segments of text paired with desired colors and styles for each.
     ///
     /// - Parameter segments: list of text-style pairs to output.
     public mutating func write(_ segments: (String, [StyleSegment])...) {
         self.write(segments)
     }
 
-    /// Output segements of text paired with desired colors and styles for each.
+    /// Output segments of text paired with desired colors and styles for each.
     ///
     /// - Parameter segments: list of text-style pairs to output.
     public mutating func write(_ segments: [(String, [StyleSegment])]) {
@@ -234,7 +234,7 @@ public struct OutputStream: TextOutputStream {
 
     // MARK: - Nested Public Types
 
-    /// Dye may attempt to style text in a few ways. On Unix, this mayb be accomplished by inserting
+    /// Dye may attempt to style text in a few ways. On Unix, this maybe be accomplished by inserting
     /// additional [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code) surrounding the actual
     /// text. On Windows, some console-specific API is used to control the output style. In addition, Dye can
     /// detect the output is not a terminal and therefore avoid producing the escape sequences.
@@ -244,7 +244,7 @@ public struct OutputStream: TextOutputStream {
     /// In addition, Dye respects the `NO_COLOR` [convention](no-color.org). If this environment variable
     /// exists, styling is disabled.
     public enum StylingMethod: Equatable {
-        /// Disable styling when the output device is not an terminal (e.g, Unix pipe). Otherwise use the
+        /// Disable styling when the output device is not a terminal (e.g, Unix pipe). Otherwise use the
         /// default methods to style terminal output.
         case auto
         /// Always output ANSI escape code. On Windows, this means the console API is invoked as well. Some
@@ -258,7 +258,7 @@ public struct OutputStream: TextOutputStream {
     /// Color for the output text. Extended colors may be used with the `.ansi` value, such value will be
     /// ignored when ANSI escape code is not used (default on Windows).
     ///
-    /// Each of the first 8 color has an complimentary, *intense* version. The two maybe converted to each
+    /// Each of the first 8 color has a complimentary, *intense* version. The two maybe converted to each
     /// other with `.intensified` and `.softened`.
     public enum Color {
         case black

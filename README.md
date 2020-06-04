@@ -12,7 +12,7 @@ well as older apps on Windows, such as CMD.exe.
 Dye is a SwiftPM package. Add it as a dependency in Package.swift:
 
 ```swift
-.package(url: "http://github.com/dduan/Pathos", from: "0.0.1")
+.package(url: "http://github.com/dduan/Dye", from: "0.0.1")
 ```
 
 … or the URL in Xcode.
