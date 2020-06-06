@@ -37,8 +37,8 @@ print("", terminator: "\n\n")
 // The above API can also take in a array, it's more useful if you need to
 // generate styled output else where (to make it testable, for example).
 var segments = [(String, [OutputStream.StyleSegment])]()
-for foreground in UInt8(8)..<16 {
-    for background in UInt8(0)..<8 {
+for foreground in UInt8(8)..<16 { // intense color for forground
+    for background in UInt8(0)..<8 { // normal color for background
         segments.append(
             (
                 "\(String(foreground, radix: 16))\(String(background, radix: 16))",
