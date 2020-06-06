@@ -12,21 +12,24 @@ stream.color.foreground = .red
 stream.style = .underlined
 print("Terminal", terminator: "", to: &stream)
 // Remember to call this so that your terminal resets to the state it began with. This is important in certain
-// platforms.
+// terminal simulators (e.g. Windows Command Prompt).
 stream.clear()
 print("!", terminator: "\n\n")
 
 // You can pair text segments with their desired style with a batch-writing API:
 // Note with this API, `.clear()` is invoked automatically at the end.
+//
+// Each of the 8 primary colors has a "intense" version. The 2 versions can be converted to each other. For
+// example, `OutputStream.Color.red.intensified.softened` converts red to intense red and back.
 stream.write(
-    ("black   ",    [.foreground(OutputStream.Color.black  .intensified), .background(.black  )]),
-    ("red     ",    [.foreground(OutputStream.Color.red    .intensified), .background(.red    )]),
-    ("green   ",    [.foreground(OutputStream.Color.green  .intensified), .background(.green  )]),
-    ("yellow  ",    [.foreground(OutputStream.Color.yellow .intensified), .background(.yellow )]),
-    ("blue    ",    [.foreground(OutputStream.Color.blue   .intensified), .background(.blue   )]),
-    ("magenta ",    [.foreground(OutputStream.Color.magenta.intensified), .background(.magenta)]),
-    ("cyan    ",    [.foreground(OutputStream.Color.cyan   .intensified), .background(.cyan   )]),
-    ("white   ",    [.foreground(OutputStream.Color.white  .intensified), .background(.white  )])
+    ("black   ",    [.foreground(.intenseBlack  ), .background(.black  )]),
+    ("red     ",    [.foreground(.intenseRed    ), .background(.red    )]),
+    ("green   ",    [.foreground(.intenseGreen  ), .background(.green  )]),
+    ("yellow  ",    [.foreground(.intenseYellow ), .background(.yellow )]),
+    ("blue    ",    [.foreground(.intenseBlue   ), .background(.blue   )]),
+    ("magenta ",    [.foreground(.intenseMagenta), .background(.magenta)]),
+    ("cyan    ",    [.foreground(.intenseCyan   ), .background(.cyan   )]),
+    ("white   ",    [.foreground(.intenseWhite  ), .background(.white  )])
 )
 
 print("", terminator: "\n\n")
