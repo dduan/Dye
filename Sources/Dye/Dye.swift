@@ -139,11 +139,11 @@ public struct OutputStream: TextOutputStream {
     public mutating func write(_ string: String) {
         if self.requiresStyleFlushNextTime {
 #if os(Windows)
-        if self.stylingMethod != .none && !self.isNoColorVariableSet,
-            let newAttributes = self.color.windowsConsoleAttributesValue
-        {
-            SetConsoleTextAttribute(self.file, newAttributes)
-        }
+            if self.stylingMethod != .none && !self.isNoColorVariableSet,
+                let newAttributes = self.color.windowsConsoleAttributesValue
+            {
+                SetConsoleTextAttribute(self.file, newAttributes)
+            }
 #endif
             if self.shouldOutputANSI {
 #if os(Windows)
@@ -343,6 +343,9 @@ public struct OutputStream: TextOutputStream {
         public var background: Color?
     }
 
+    /// Text styles. These can be combined as expected for an `OptionSet`. Not all terminal simulators render
+    /// all of these styles. On Windows, these have no effect to terminals that don't support ANSI escape
+    /// codes.
     public struct Style: OptionSet {
         public static let bold = Style(rawValue: 1 << 0)
         public static let dim = Style(rawValue: 1 << 1)
@@ -360,9 +363,23 @@ public struct OutputStream: TextOutputStream {
         }
     }
 
+    /// Represents an aspect of text output customization. It's expected to be used in an array with the
+    /// batch write APIs:
+    ///
+    /// ```swift
+    /// stream.write(
+    ///   ("Hello, ", []),
+    ///   ("World", [.foreground(.red)]),
+    ///   ("!", []),
+    /// )
+    /// ```
+    /// This code prints out "Hello, World!" with "World" being red.
     public enum StyleSegment {
+        /// Set the foreground color
         case foreground(Color)
+        /// Set the background color
         case background(Color)
+        /// Set the style.
         case style(Style)
     }
 
