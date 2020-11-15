@@ -20,7 +20,7 @@ typealias NativeFileHandle = UnsafeMutablePointer<FILE>
 ///
 /// ```swift
 /// var outputStream = OutputStream.standardOutput()
-/// print("Hello, ", &outputStream)
+/// print("Hello, ", to: &outputStream)
 /// ```
 ///
 /// To make the upcoming text in red, and bold text in the terminal, for example, do this:
@@ -63,8 +63,8 @@ public struct OutputStream: TextOutputStream {
     /// - Parameters:
     ///   - foregroundColor: the color for the upcoming text output.
     ///   - backgroundColor: the background color for the upcoming text output.
-    ///   - style:           other styles you want to apply to text output. This has no effect for for some
-    ///                      older terminal simulators on Windows, such as CMD.EXE
+    ///   - style:           other styles you want to apply to text output. This has no effect for some older
+    ///                      terminal simulators on Windows, such as CMD.EXE
     ///
     /// - Returns: A stream for stderr.
     public static func standardError(
@@ -85,8 +85,8 @@ public struct OutputStream: TextOutputStream {
     /// - Parameters:
     ///   - foregroundColor: the color for the upcoming text output.
     ///   - backgroundColor: the background color for the upcoming text output.
-    ///   - style:           other styles you want to apply to text output. This has no effect for for some
-    ///                      older terminal simulators on Windows, such as CMD.EXE
+    ///   - style:           other styles you want to apply to text output. This has no effect for some older
+    ///                      terminal simulators on Windows, such as CMD.EXE
     ///
     /// - Returns: A stream for stdout.
     public static func standardOutput(
